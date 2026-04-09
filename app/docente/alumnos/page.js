@@ -4,10 +4,12 @@
 // Subir CSV de alumnos y visualizar la lista actual
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { Spinner, AlertaError, EmptyState } from '@/components/ui'
 
 export default function AlumnosPage() {
+  const router = useRouter()
   const [porAula,   setPorAula]   = useState({})
   const [total,     setTotal]     = useState(0)
   const [cargando,  setCargando]  = useState(true)
@@ -68,11 +70,15 @@ export default function AlumnosPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-medium text-gray-900">Lista de alumnos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {total} alumno{total !== 1 ? 's' : ''} · {aulas.length} aula{aulas.length !== 1 ? 's' : ''}
-          </p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/docente')}
+            className="text-sm text-gray-400 hover:text-gray-600">← Volver</button>
+          <div>
+            <h1 className="text-xl font-medium text-gray-900">Lista de alumnos</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {total} alumno{total !== 1 ? 's' : ''} · {aulas.length} aula{aulas.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <input

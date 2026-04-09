@@ -45,11 +45,12 @@ export default function GrupoPage() {
       // No tiene grupo → cargar compañeros y sesión
       const [companeroData, sesionData] = await Promise.all([
         api.get(`/alumno/companeros?sesion_id=${sesionId}`),
-        api.get(`/docente/sesiones`),  // para saber max_grupo
+        api.get(`/alumno/sesion-activa`),  // para saber max_grupo
       ])
       setCompaneros(companeroData.companeros || [])
-      // Obtener aulas disponibles desde los compañeros (excluir la propia)
-      const sesionActiva = sesionData.sesiones?.find(s => s.id === sesionId)
+      const sesionActiva = sesionData.activa?.id === sesionId
+        ? sesionData.activa
+        : sesionData.historial?.find(s => s.id === sesionId)
       setSesion(sesionActiva)
       const aulasDisp = (sesionActiva?.aulas || []).filter(a => a !== usuario.aula).sort()
       setAulas(aulasDisp)

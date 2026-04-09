@@ -1,8 +1,5 @@
 'use client'
 
-// app/docente/sesiones/[id]/page.js
-// Dashboard de resultados de una sesión: progreso por aula + tabla de alumnos
-
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
@@ -20,6 +17,7 @@ export default function SesionDetallePage() {
   const [aulaFiltro, setAulaFiltro] = useState('')
   const [filtroBadge, setFiltroBadge] = useState('')
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
 
   useEffect(() => { cargarDatos() }, [id])
 
@@ -52,6 +50,18 @@ export default function SesionDetallePage() {
     }
   }
 
+  async function eliminarSesion() {
+    if (!confirm(`¿Eliminar "${sesion?.nombre}" y todos sus datos (grupos y evaluaciones)? Esta acción no se puede deshacer.`)) return
+    setEliminando(true)
+    try {
+      await api.delete(`/docente/sesiones/${id}`)
+      router.replace('/docente')
+    } catch (err) {
+      setError(err.message)
+      setEliminando(false)
+    }
+  }
+
   async function exportar() {
     const fecha = new Date().toISOString().split('T')[0]
     await api.descargar(`/resultados/${id}/exportar`, `evaluacion_${fecha}.xlsx`)
@@ -63,16 +73,17 @@ export default function SesionDetallePage() {
   const aulas = [...new Set(resultados.map(r => r.aula))].sort()
   const filtrados = resultados.filter(r => {
     if (aulaFiltro && r.aula !== aulaFiltro) return false
-    if (filtroBadge === 'completo'  && !r.pct_final) return false
-    if (filtroBadge === 'pendiente' && r.pct_final)  return false
+    if (filtroBadge === 'completo'  && !r.completado) return false
+    if (filtroBadge === 'pendiente' && r.completado)  return false
     return true
   })
 
-  // Métricas globales
-  const completaron = resultados.filter(r => r.pct_final !== null).length
+  // Métricas globales — ahora correctas porque resultados incluye todos los alumnos
+  const completaron = resultados.filter(r => r.completado).length
   const total       = resultados.length
+  const pendientes  = total - completaron
   const promedio    = completaron > 0
-    ? (resultados.filter(r => r.pct_final).reduce((s, r) => s + r.pct_final, 0) / completaron).toFixed(2)
+    ? (resultados.filter(r => r.pct_final).reduce((s, r) => s + parseFloat(r.pct_final), 0) / completaron).toFixed(2)
     : null
 
   return (
@@ -104,6 +115,13 @@ export default function SesionDetallePage() {
           >
             {cambiandoEstado ? '...' : sesion?.estado === 'abierta' ? 'Cerrar sesión' : 'Reabrir sesión'}
           </button>
+          <button
+            onClick={eliminarSesion}
+            disabled={eliminando}
+            className="text-sm rounded-lg px-3 py-2 font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            {eliminando ? 'Eliminando...' : 'Eliminar sesión'}
+          </button>
         </div>
       </div>
 
@@ -112,9 +130,9 @@ export default function SesionDetallePage() {
       {/* Métricas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Alumnos',      valor: total },
+          { label: 'En grupos',    valor: total },
           { label: 'Completaron',  valor: completaron, color: 'text-green-600' },
-          { label: 'Pendientes',   valor: total - completaron, color: 'text-red-500' },
+          { label: 'Pendientes',   valor: pendientes,  color: pendientes > 0 ? 'text-red-500' : 'text-gray-800' },
           { label: 'Promedio aula',valor: promedio ? `${promedio}%` : '—' },
         ].map(m => (
           <div key={m.label} className="card py-3">
@@ -125,38 +143,39 @@ export default function SesionDetallePage() {
       </div>
 
       {/* Progreso por aula */}
-      <div className="card mb-6">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Progreso por aula</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {progreso.sort((a, b) => b.pct_respuesta - a.pct_respuesta).map(p => {
-            const pct = parseFloat(p.pct_respuesta) || 0
-            return (
-              <div key={p.aula}
-                className="cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
-                onClick={() => setAulaFiltro(p.aula === aulaFiltro ? '' : p.aula)}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span className={`text-sm ${aulaFiltro === p.aula ? 'font-medium text-blue-600' : 'text-gray-700'}`}>
-                    {p.aula}
-                  </span>
-                  <span className={`text-xs font-medium
-                    ${pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
-                    {pct.toFixed(0)}%
-                  </span>
+      {progreso.length > 0 && (
+        <div className="card mb-6">
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Progreso por aula</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {progreso.sort((a, b) => b.pct_respuesta - a.pct_respuesta).map(p => {
+              const pct = parseFloat(p.pct_respuesta) || 0
+              return (
+                <div key={p.aula}
+                  className="cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                  onClick={() => setAulaFiltro(p.aula === aulaFiltro ? '' : p.aula)}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`text-sm ${aulaFiltro === p.aula ? 'font-medium text-blue-600' : 'text-gray-700'}`}>
+                      {p.aula}
+                    </span>
+                    <span className={`text-xs font-medium
+                      ${pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
+                      {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <ProgBar pct={pct}/>
+                  <p className="text-xs text-gray-400 mt-0.5">{p.completaron} de {p.total_alumnos}</p>
                 </div>
-                <ProgBar pct={pct}/>
-                <p className="text-xs text-gray-400 mt-0.5">{p.completaron} de {p.total_alumnos}</p>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+          {aulaFiltro && (
+            <button onClick={() => setAulaFiltro('')} className="mt-3 text-xs text-blue-600 hover:underline">
+              Mostrar todas las aulas ✕
+            </button>
+          )}
         </div>
-        {aulaFiltro && (
-          <button onClick={() => setAulaFiltro('')}
-            className="mt-3 text-xs text-blue-600 hover:underline">
-            Mostrar todas las aulas ✕
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Tabla de resultados */}
       <div className="card p-0 overflow-hidden">
@@ -169,7 +188,7 @@ export default function SesionDetallePage() {
           >
             <option value="">Todos ({total})</option>
             <option value="completo">Completaron ({completaron})</option>
-            <option value="pendiente">Pendientes ({total - completaron})</option>
+            <option value="pendiente">Pendientes ({pendientes})</option>
           </select>
         </div>
 
@@ -179,19 +198,26 @@ export default function SesionDetallePage() {
               <tr className="bg-gray-50">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Alumno</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wide hidden sm:table-cell">Aula</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">Estado</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">% Final</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">Descriptor</th>
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((r, i) => (
-                <tr key={r.alumno_id} className={`border-t border-gray-50 ${r.pct_final === null ? 'opacity-50' : ''}`}>
+              {filtrados.map((r) => (
+                <tr key={r.alumno_id} className={`border-t border-gray-50 ${!r.completado ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-2.5">
                     <p className="text-gray-800 font-medium text-sm">{r.nombre}</p>
                     <p className="text-xs text-gray-400">{r.correo}</p>
                   </td>
                   <td className="px-4 py-2.5 hidden sm:table-cell">
                     <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{r.aula}</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium
+                      ${r.completado ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                      {r.completado ? 'Completado' : 'Pendiente'}
+                    </span>
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <BadgePct pct={r.pct_final}/>
@@ -201,6 +227,13 @@ export default function SesionDetallePage() {
                   </td>
                 </tr>
               ))}
+              {filtrados.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">
+                    No hay alumnos que mostrar con este filtro.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

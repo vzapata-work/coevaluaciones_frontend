@@ -45,6 +45,11 @@ export default function EvaluarPage() {
         api.get(`/alumno/grupo?sesion_id=${sesionId}`),
         api.get('/alumno/sesion-activa'),
       ])
+      // Si ya completó la evaluación, redirigir al inicio
+      if (sesionesData.activa?.id === sesionId && sesionesData.activa?.alumno_completo) {
+        router.replace('/alumno')
+        return
+      }
       if (!grupoData.grupo) { router.replace(`/alumno/grupo?sesion_id=${sesionId}`); return }
 
       const g = grupoData.grupo

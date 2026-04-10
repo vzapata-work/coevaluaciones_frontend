@@ -9,15 +9,15 @@ export default function SesionDetallePage() {
   const router  = useRouter()
   const { id }  = useParams()
 
-  const [sesion,     setSesion]     = useState(null)
-  const [progreso,   setProgreso]   = useState([])
-  const [resultados, setResultados] = useState([])
-  const [cargando,   setCargando]   = useState(true)
-  const [error,      setError]      = useState(null)
-  const [aulaFiltro, setAulaFiltro] = useState('')
-  const [filtroBadge, setFiltroBadge] = useState('')
+  const [sesion,      setSesion]      = useState(null)
+  const [progreso,    setProgreso]    = useState([])
+  const [resultados,  setResultados]  = useState([])
+  const [cargando,    setCargando]    = useState(true)
+  const [error,       setError]       = useState(null)
+  const [aulaFiltro,  setAulaFiltro]  = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
-  const [eliminando, setEliminando] = useState(false)
+  const [eliminando,  setEliminando]  = useState(false)
 
   useEffect(() => { cargarDatos() }, [id])
 
@@ -51,7 +51,7 @@ export default function SesionDetallePage() {
   }
 
   async function eliminarSesion() {
-    if (!confirm(`¿Eliminar "${sesion?.nombre}" y todos sus datos (grupos y evaluaciones)? Esta acción no se puede deshacer.`)) return
+    if (!confirm(`¿Eliminar "${sesion?.nombre}" y todos sus datos? Esta acción no se puede deshacer.`)) return
     setEliminando(true)
     try {
       await api.delete(`/docente/sesiones/${id}`)
@@ -69,23 +69,27 @@ export default function SesionDetallePage() {
 
   if (cargando) return <div className="flex justify-center py-20"><Spinner className="w-6 h-6"/></div>
 
-  // Filtrar resultados
+  // Aulas disponibles para filtro
   const aulas = [...new Set(resultados.map(r => r.aula))].sort()
+
+  // Aplicar filtros
   const filtrados = resultados.filter(r => {
     if (aulaFiltro && r.aula !== aulaFiltro) return false
-    if (filtroBadge === 'completo'  && !r.completado) return false
-    if (filtroBadge === 'pendiente' && r.completado)  return false
+    if (filtroEstado === 'completo')   return r.completado
+    if (filtroEstado === 'pendiente')  return r.tiene_grupo && !r.completado
+    if (filtroEstado === 'sin_grupo')  return !r.tiene_grupo
     return true
   })
 
-  // Métricas globales
-  // "total" = alumnos en grupos. Alumnos sin grupo no aparecen aquí.
-  const completaron     = resultados.filter(r => r.completado).length
-  const total           = resultados.length
-  const pendientes      = total - completaron
-  // Promedio: solo sobre quienes completaron Y tienen pct_final (fueron evaluados)
-  const conResultado    = resultados.filter(r => r.completado && r.pct_final !== null)
-  const promedio        = conResultado.length > 0
+  // Métricas — sobre todos los alumnos del aula
+  const total       = resultados.length
+  const enGrupo     = resultados.filter(r => r.tiene_grupo).length
+  const sinGrupo    = total - enGrupo
+  const completaron = resultados.filter(r => r.completado).length
+  const pendientes  = enGrupo - completaron  // pendientes = en grupo pero no completaron
+
+  const conResultado = resultados.filter(r => r.completado && r.pct_final !== null)
+  const promedio     = conResultado.length > 0
     ? (conResultado.reduce((s, r) => s + parseFloat(r.pct_final), 0) / conResultado.length).toFixed(2)
     : null
 
@@ -131,12 +135,13 @@ export default function SesionDetallePage() {
       <AlertaError mensaje={error} onClose={() => setError(null)}/>
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
         {[
-          { label: 'En grupos',    valor: total },
-          { label: 'Completaron',  valor: completaron, color: 'text-green-600' },
-          { label: 'Pendientes',   valor: pendientes,  color: pendientes > 0 ? 'text-red-500' : 'text-gray-800' },
-          { label: 'Promedio aula',valor: promedio ? `${promedio}%` : '—' },
+          { label: 'Total alumnos', valor: total },
+          { label: 'En grupo',      valor: enGrupo,    color: 'text-blue-600' },
+          { label: 'Sin grupo',     valor: sinGrupo,   color: sinGrupo > 0 ? 'text-amber-500' : 'text-gray-800' },
+          { label: 'Completaron',   valor: completaron, color: 'text-green-600' },
+          { label: 'Pendientes',    valor: pendientes,  color: pendientes > 0 ? 'text-red-500' : 'text-gray-800' },
         ].map(m => (
           <div key={m.label} className="card py-3">
             <p className="text-xs text-gray-400 mb-1">{m.label}</p>
@@ -144,10 +149,18 @@ export default function SesionDetallePage() {
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-400 mb-6">
-        Solo se muestran alumnos que ya formaron grupo. Los alumnos que aún no tienen grupo
-        no aparecen en esta tabla hasta que inicien sesión y formen su grupo.
-      </p>
+
+      {promedio && (
+        <p className="text-xs text-gray-400 mb-6">
+          Promedio del aula: <span className="font-medium text-gray-700">{promedio}%</span>
+          &nbsp;·&nbsp; Calculado sobre {conResultado.length} alumno{conResultado.length !== 1 ? 's' : ''} con evaluación completa.
+        </p>
+      )}
+      {!promedio && (
+        <p className="text-xs text-gray-400 mb-6">
+          Aún no hay evaluaciones completas para calcular el promedio.
+        </p>
+      )}
 
       {/* Progreso por aula */}
       {progreso.length > 0 && (
@@ -188,15 +201,26 @@ export default function SesionDetallePage() {
       <div className="card p-0 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-wrap gap-2">
           <p className="text-sm font-medium text-gray-800">Resultados por alumno</p>
-          <select
-            value={filtroBadge}
-            onChange={e => setFiltroBadge(e.target.value)}
-            className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none"
-          >
-            <option value="">Todos ({total})</option>
-            <option value="completo">Completaron ({completaron})</option>
-            <option value="pendiente">Pendientes ({pendientes})</option>
-          </select>
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={aulaFiltro}
+              onChange={e => setAulaFiltro(e.target.value)}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none"
+            >
+              <option value="">Todas las aulas</option>
+              {aulas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <select
+              value={filtroEstado}
+              onChange={e => setFiltroEstado(e.target.value)}
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none"
+            >
+              <option value="">Todos ({total})</option>
+              <option value="completo">Completaron ({completaron})</option>
+              <option value="pendiente">Pendientes ({pendientes})</option>
+              <option value="sin_grupo">Sin grupo ({sinGrupo})</option>
+            </select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -211,8 +235,8 @@ export default function SesionDetallePage() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((r) => (
-                <tr key={r.alumno_id} className={`border-t border-gray-50 ${!r.completado ? 'opacity-50' : ''}`}>
+              {filtrados.map(r => (
+                <tr key={r.alumno_id} className={`border-t border-gray-50 ${!r.tiene_grupo ? 'opacity-40' : !r.completado ? 'opacity-60' : ''}`}>
                   <td className="px-4 py-2.5">
                     <p className="text-gray-800 font-medium text-sm">{r.nombre}</p>
                     <p className="text-xs text-gray-400">{r.correo}</p>
@@ -221,10 +245,19 @@ export default function SesionDetallePage() {
                     <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{r.aula}</span>
                   </td>
                   <td className="px-4 py-2.5 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                      ${r.completado ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {r.completado ? 'Completado' : 'Pendiente'}
-                    </span>
+                    {!r.tiene_grupo ? (
+                      <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">
+                        Sin grupo
+                      </span>
+                    ) : r.completado ? (
+                      <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        Completado
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                        Pendiente
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <BadgePct pct={r.pct_final}/>
@@ -237,7 +270,7 @@ export default function SesionDetallePage() {
               {filtrados.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">
-                    No hay alumnos que mostrar con este filtro.
+                    No hay alumnos con este filtro.
                   </td>
                 </tr>
               )}

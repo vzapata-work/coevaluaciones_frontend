@@ -1,12 +1,9 @@
 'use client'
 
-// app/docente/page.js — panel principal del docente
-// Muestra sesión activa + historial de sesiones
-
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import api from '@/lib/api'
-import { BadgeEstado, ProgBar, Spinner, EmptyState, AlertaError } from '@/components/ui'
+import { BadgeEstado, Spinner, EmptyState, AlertaError } from '@/components/ui'
 
 export default function DocenteHome() {
   const router = useRouter()
@@ -14,9 +11,7 @@ export default function DocenteHome() {
   const [cargando,  setCargando]  = useState(true)
   const [error,     setError]     = useState(null)
 
-  useEffect(() => {
-    cargarSesiones()
-  }, [])
+  useEffect(() => { cargarSesiones() }, [])
 
   async function cargarSesiones() {
     try {
@@ -29,15 +24,12 @@ export default function DocenteHome() {
     }
   }
 
-  const activa   = sesiones.find(s => s.estado === 'abierta')
-  const historial = sesiones.filter(s => s.estado !== 'abierta')
+  // Todas las abiertas y todas las cerradas
+  const abiertas  = sesiones.filter(s => s.estado === 'abierta')
+  const cerradas  = sesiones.filter(s => s.estado !== 'abierta')
 
   if (cargando) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spinner className="w-6 h-6"/>
-      </div>
-    )
+    return <div className="flex justify-center py-20"><Spinner className="w-6 h-6"/></div>
   }
 
   return (
@@ -67,16 +59,21 @@ export default function DocenteHome() {
 
       <AlertaError mensaje={error} onClose={() => setError(null)}/>
 
-      {/* Sesión activa */}
-      {activa ? (
+      {/* Sesiones abiertas */}
+      {abiertas.length > 0 ? (
         <div className="mb-6">
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-            Sesión activa
+            Sesiones abiertas ({abiertas.length})
           </p>
-          <SesionCard
-            sesion={activa}
-            onClick={() => router.push(`/docente/sesiones/${activa.id}`)}
-          />
+          <div className="space-y-2">
+            {abiertas.map(s => (
+              <SesionCard
+                key={s.id}
+                sesion={s}
+                onClick={() => router.push(`/docente/sesiones/${s.id}`)}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="card mb-6 border-dashed border-gray-200 bg-gray-50 text-center py-8">
@@ -90,14 +87,14 @@ export default function DocenteHome() {
         </div>
       )}
 
-      {/* Historial */}
-      {historial.length > 0 && (
+      {/* Sesiones cerradas / historial */}
+      {cerradas.length > 0 && (
         <div>
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-            Historial
+            Historial ({cerradas.length})
           </p>
           <div className="space-y-2">
-            {historial.map(s => (
+            {cerradas.map(s => (
               <SesionCard
                 key={s.id}
                 sesion={s}
@@ -118,16 +115,14 @@ export default function DocenteHome() {
   )
 }
 
-// ── Tarjeta de sesión ─────────────────────────────────────────
-
 function SesionCard({ sesion, onClick }) {
-  const activa = sesion.estado === 'abierta'
+  const abierta = sesion.estado === 'abierta'
 
   return (
     <div
       onClick={onClick}
       className={`card cursor-pointer hover:border-gray-300 transition-colors
-                  ${activa ? 'border-l-4 border-l-green-500 rounded-l-none' : ''}`}
+                  ${abierta ? 'border-l-4 border-l-green-500 rounded-l-none' : ''}`}
     >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div className="min-w-0">
@@ -135,7 +130,8 @@ function SesionCard({ sesion, onClick }) {
             <BadgeEstado estado={sesion.estado}/>
             {sesion.cierra_en && (
               <span className="text-xs text-gray-400">
-                Cierra {new Date(sesion.cierra_en).toLocaleDateString('es-PE')}
+                {abierta ? 'Cierra' : 'Cerrada'}{' '}
+                {new Date(sesion.cierra_en).toLocaleDateString('es-PE')}
               </span>
             )}
           </div>
@@ -146,15 +142,12 @@ function SesionCard({ sesion, onClick }) {
             {sesion.criterios?.length} criterio{sesion.criterios?.length !== 1 ? 's' : ''}
           </p>
         </div>
-        {!activa && (
+        {!abierta && (
           <button
             onClick={e => {
               e.stopPropagation()
               const fecha = new Date().toISOString().split('T')[0]
-              api.descargar(
-                `/resultados/${sesion.id}/exportar`,
-                `evaluacion_${fecha}.xlsx`
-              )
+              api.descargar(`/resultados/${sesion.id}/exportar`, `evaluacion_${fecha}.xlsx`)
             }}
             className="text-xs border border-gray-200 rounded-md px-2 py-1 hover:bg-gray-50
                        text-gray-500 flex-shrink-0"
@@ -164,7 +157,6 @@ function SesionCard({ sesion, onClick }) {
         )}
       </div>
 
-      {/* Aulas como chips */}
       <div className="flex flex-wrap gap-1">
         {(sesion.aulas || []).slice(0, 6).map(a => (
           <span key={a} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
@@ -172,9 +164,7 @@ function SesionCard({ sesion, onClick }) {
           </span>
         ))}
         {sesion.aulas?.length > 6 && (
-          <span className="text-xs text-gray-400">
-            +{sesion.aulas.length - 6} más
-          </span>
+          <span className="text-xs text-gray-400">+{sesion.aulas.length - 6} más</span>
         )}
       </div>
     </div>

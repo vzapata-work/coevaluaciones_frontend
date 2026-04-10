@@ -90,14 +90,18 @@ export default function AlumnoHome() {
             </div>
 
             {activa.alumno_completo ? (
-              <div className="flex items-center gap-2 justify-center py-2 text-sm text-green-600">
+              <button
+                onClick={() => router.push(`/alumno/sesion/${activa.id}`)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-green-600
+                           bg-green-50 rounded-lg hover:bg-green-100 transition-colors font-medium"
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16">
                   <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/>
                   <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.3"
                     strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Tu evaluación fue enviada correctamente
-              </div>
+                Evaluación completada · Ver mis respuestas →
+              </button>
             ) : (
               <button
                 onClick={irAEvaluar}
@@ -125,7 +129,11 @@ export default function AlumnoHome() {
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Historial</p>
           <div className="space-y-2">
             {historial.map(s => (
-              <div key={s.id} className="card">
+              <div
+                key={s.id}
+                onClick={() => s.alumno_completo && router.push(`/alumno/sesion/${s.id}`)}
+                className={`card transition-colors ${s.alumno_completo ? 'cursor-pointer hover:border-gray-300' : ''}`}
+              >
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <h3 className="text-sm font-medium text-gray-800 truncate">{s.nombre}</h3>
@@ -133,10 +141,15 @@ export default function AlumnoHome() {
                       {s.abierta_en ? new Date(s.abierta_en).toLocaleDateString('es-PE') : '—'}
                     </p>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
-                    ${s.alumno_completo ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-500'}`}>
-                    {s.alumno_completo ? 'Completado' : 'No enviado'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+                      ${s.alumno_completo ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-500'}`}>
+                      {s.alumno_completo ? 'Completado' : 'No enviado'}
+                    </span>
+                    {s.alumno_completo && (
+                      <span className="text-xs text-gray-400">Ver →</span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

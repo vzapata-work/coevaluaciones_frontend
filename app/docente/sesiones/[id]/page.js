@@ -78,12 +78,15 @@ export default function SesionDetallePage() {
     return true
   })
 
-  // Métricas globales — ahora correctas porque resultados incluye todos los alumnos
-  const completaron = resultados.filter(r => r.completado).length
-  const total       = resultados.length
-  const pendientes  = total - completaron
-  const promedio    = completaron > 0
-    ? (resultados.filter(r => r.pct_final).reduce((s, r) => s + parseFloat(r.pct_final), 0) / completaron).toFixed(2)
+  // Métricas globales
+  // "total" = alumnos en grupos. Alumnos sin grupo no aparecen aquí.
+  const completaron     = resultados.filter(r => r.completado).length
+  const total           = resultados.length
+  const pendientes      = total - completaron
+  // Promedio: solo sobre quienes completaron Y tienen pct_final (fueron evaluados)
+  const conResultado    = resultados.filter(r => r.completado && r.pct_final !== null)
+  const promedio        = conResultado.length > 0
+    ? (conResultado.reduce((s, r) => s + parseFloat(r.pct_final), 0) / conResultado.length).toFixed(2)
     : null
 
   return (
@@ -128,7 +131,7 @@ export default function SesionDetallePage() {
       <AlertaError mensaje={error} onClose={() => setError(null)}/>
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
         {[
           { label: 'En grupos',    valor: total },
           { label: 'Completaron',  valor: completaron, color: 'text-green-600' },
@@ -141,6 +144,10 @@ export default function SesionDetallePage() {
           </div>
         ))}
       </div>
+      <p className="text-xs text-gray-400 mb-6">
+        Solo se muestran alumnos que ya formaron grupo. Los alumnos que aún no tienen grupo
+        no aparecen en esta tabla hasta que inicien sesión y formen su grupo.
+      </p>
 
       {/* Progreso por aula */}
       {progreso.length > 0 && (

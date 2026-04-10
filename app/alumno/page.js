@@ -7,13 +7,11 @@ import { Spinner, AlertaError } from '@/components/ui'
 
 export default function AlumnoHome() {
   const router = useRouter()
-  const [activa,    setActiva]    = useState(undefined)  // undefined = aún no cargó
+  const [activa,    setActiva]    = useState(undefined)
   const [historial, setHistorial] = useState([])
   const [error,     setError]     = useState(null)
 
-  useEffect(() => {
-    cargar()
-  }, [])
+  useEffect(() => { cargar() }, [])
 
   async function cargar() {
     try {
@@ -23,12 +21,12 @@ export default function AlumnoHome() {
     } catch (err) {
       console.error('Error cargando sesión activa:', err)
       setError(err.message || 'No se pudo cargar la sesión')
-      setActiva(null)  // salir del estado de carga aunque haya error
+      setActiva(null)
     }
   }
 
   async function irAEvaluar() {
-    if (!activa) return
+    if (!activa || activa.alumno_completo) return
     try {
       const data = await api.get(`/alumno/grupo?sesion_id=${activa.id}`)
       router.push(data.grupo
@@ -40,7 +38,6 @@ export default function AlumnoHome() {
     }
   }
 
-  // Mientras activa === undefined, aún está cargando
   if (activa === undefined && !error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -62,7 +59,7 @@ export default function AlumnoHome() {
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
             Sesión activa
           </p>
-          <div className="card border-2 border-blue-100">
+          <div className={`card border-2 ${activa.alumno_completo ? 'border-green-100' : 'border-blue-100'}`}>
             <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -81,17 +78,35 @@ export default function AlumnoHome() {
                   {activa.con_autoevaluacion ? ' · Incluye autoevaluación' : ''}
                 </p>
               </div>
-              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-medium">
-                Pendiente
-              </span>
+              {activa.alumno_completo ? (
+                <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                  Completado
+                </span>
+              ) : (
+                <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-medium">
+                  Pendiente
+                </span>
+              )}
             </div>
-            <button
-              onClick={irAEvaluar}
-              className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium
-                         hover:bg-blue-700 transition-colors"
-            >
-              Comenzar evaluación →
-            </button>
+
+            {activa.alumno_completo ? (
+              <div className="flex items-center gap-2 justify-center py-2 text-sm text-green-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/>
+                  <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.3"
+                    strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Tu evaluación fue enviada correctamente
+              </div>
+            ) : (
+              <button
+                onClick={irAEvaluar}
+                className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium
+                           hover:bg-blue-700 transition-colors"
+              >
+                Comenzar evaluación →
+              </button>
+            )}
           </div>
         </div>
       ) : (

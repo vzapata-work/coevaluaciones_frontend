@@ -42,10 +42,10 @@ export default function GrupoPage() {
         setCargando(false)
         return
       }
-      // No tiene grupo → cargar compañeros y sesión
+      // No tiene grupo → cargar compañeros y sesión activa
       const [companeroData, sesionData] = await Promise.all([
         api.get(`/alumno/companeros?sesion_id=${sesionId}`),
-        api.get(`/alumno/sesion-activa`),  // para saber max_grupo
+        api.get(`/alumno/sesion-activa`),
       ])
       setCompaneros(companeroData.companeros || [])
       const sesionActiva = sesionData.activa?.id === sesionId
@@ -55,7 +55,8 @@ export default function GrupoPage() {
       const aulasDisp = (sesionActiva?.aulas || []).filter(a => a !== usuario.aula).sort()
       setAulas(aulasDisp)
     } catch (err) {
-      setError(err.message)
+      console.error("Error en cargarInicial:", err)
+      setError(err.message || "Error al cargar")
     } finally {
       setCargando(false)
     }

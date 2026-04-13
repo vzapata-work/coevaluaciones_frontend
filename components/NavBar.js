@@ -33,7 +33,7 @@ export default function NavBar() {
               <rect x="9" y="9" width="6" height="6" rx="1.5"/>
             </svg>
           </div>
-          <span className="text-sm font-medium text-gray-700 hidden sm:block">Coevalución - Química General</span>
+          <span className="text-sm font-medium text-gray-700 hidden sm:block">Coevaluación - Química General</span>
         </div>
 
         {/* Usuario */}

@@ -447,7 +447,14 @@ export default function SesionDetallePage() {
                         ? <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">Completado</span>
                         : <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">Pendiente</span>}
                   </td>
-                  <td className="px-4 py-2.5 text-center"><BadgePct pct={r.pct_final}/></td>
+                  <td className="px-4 py-2.5 text-center">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <BadgePct pct={r.pct_final}/>
+                      {r.autoeval_penalizada && (
+                        <span className="text-xs text-amber-500" title="Incluye autoeval. penalizada (Deficiente)">⚠ penalizado</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-2.5 text-center"><BadgeDescriptor descriptor={r.descriptor}/></td>
                 </tr>
               ))}

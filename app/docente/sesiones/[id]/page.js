@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import api from '@/lib/api'
 import { BadgeDescriptor, BadgePct, BadgeEstado, ProgBar, Spinner, AlertaError } from '@/components/ui'
@@ -25,9 +26,10 @@ function ModalAlumno({ sesionId, alumno, onClose }) {
       .finally(() => setCargando(false))
   }, [sesionId, alumno.alumno_id])
 
-  return (
+  if (typeof document === 'undefined') return null
+  return createPortal(
     <div
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:50,
+      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:9999,
                display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
@@ -189,7 +191,8 @@ function ModalAlumno({ sesionId, alumno, onClose }) {
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </div>,
+    document.body
   )
 }
 

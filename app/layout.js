@@ -6,7 +6,7 @@ import { AuthProvider } from '@/lib/AuthContext'
 import './globals.css'
 
 export const metadata = {
-  title: 'Evaluación Grupal',
+  title: 'Coevaluación - Química General',
   description: 'App de coevaluación y autoevaluación grupal',
 }
 

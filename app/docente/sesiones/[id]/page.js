@@ -6,10 +6,10 @@ import api from '@/lib/api'
 import { BadgeDescriptor, BadgePct, BadgeEstado, ProgBar, Spinner, AlertaError } from '@/components/ui'
 
 const COLOR_DESC = {
-  Excelente:  'bg-green-50 text-green-700',
-  Bueno:      'bg-blue-50 text-blue-700',
-  Regular:    'bg-amber-50 text-amber-700',
-  Deficiente: 'bg-red-50 text-red-700',
+  Excelente:  { background:'#e8f5e9', color:'#1d6f42' },
+  Bueno:      { background:'#e3f2fd', color:'#185fa5' },
+  Regular:    { background:'#fff8e1', color:'#854f0b' },
+  Deficiente: { background:'#ffebee', color:'#a32d2d' },
 }
 
 // ── Modal de detalle por alumno ────────────────────────────
@@ -93,8 +93,8 @@ function ModalAlumno({ sesionId, alumno, onClose }) {
                       {datos.pct_final !== null ? `${datos.pct_final}%` : '—'}
                     </p>
                     {datos.descriptor_final && (
-                      <span style={{ fontSize:11, padding:'1px 8px', borderRadius:20, fontWeight:500 }}
-                        className={COLOR_DESC[datos.descriptor_final] || ''}>
+                      <span style={{ fontSize:11, padding:'1px 8px', borderRadius:20, fontWeight:500,
+                                     ...(COLOR_DESC[datos.descriptor_final] || {}) }}>
                         {datos.descriptor_final}
                       </span>
                     )}
@@ -120,8 +120,8 @@ function ModalAlumno({ sesionId, alumno, onClose }) {
                     </p>
                     <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
                       {c.descriptor && (
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500 }}
-                          className={COLOR_DESC[c.descriptor] || ''}>
+                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:20, fontWeight:500,
+                                       ...(COLOR_DESC[c.descriptor] || {}) }}>
                           {c.descriptor}
                         </span>
                       )}
@@ -174,8 +174,8 @@ function ModalAlumno({ sesionId, alumno, onClose }) {
                             {r.criterio_nombre}
                           </p>
                           <span style={{ fontSize:11, padding:'1px 7px', borderRadius:20,
-                                         fontWeight:500, flexShrink:0 }}
-                            className={COLOR_DESC[r.descriptor] || 'bg-gray-100 text-gray-500'}>
+                                         fontWeight:500, flexShrink:0,
+                                         ...(COLOR_DESC[r.descriptor] || { background:'#f3f4f6', color:'#6b7280' }) }}>
                             {r.descriptor}
                           </span>
                         </div>

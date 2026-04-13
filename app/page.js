@@ -59,7 +59,7 @@ export default function LoginPage() {
               <rect x="13" y="13" width="9" height="9" rx="2"/>
             </svg>
           </div>
-          <h1 className="text-xl font-medium text-gray-900 mb-1">Evaluación grupal</h1>
+          <h1 className="text-xl font-medium text-gray-900 mb-1">Coevaluación - Química General</h1>
           <p className="text-sm text-gray-500">Ingresa con tu cuenta institucional</p>
         </div>
 

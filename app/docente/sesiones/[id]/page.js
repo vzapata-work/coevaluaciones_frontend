@@ -330,6 +330,10 @@ export default function SesionDetallePage() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button onClick={() => router.push(`/docente/sesiones/${id}/grupos`)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
+            Gestionar grupos
+          </button>
           <button onClick={exportar} className="text-sm border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">Exportar Excel</button>
           <button onClick={toggleEstado} disabled={cambiandoEstado}
             className={`text-sm rounded-lg px-3 py-2 font-medium transition-colors disabled:opacity-50

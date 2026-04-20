@@ -89,14 +89,13 @@ export default function GrupoPage() {
     })
   }
 
-  async function confirmarGrupo() {
-    if (seleccionados.size === 0) return setError('Selecciona al menos un compañero')
+  async function confirmarGrupo(soloYo = false) {
     setGuardando(true)
     setError(null)
     try {
       await api.post('/alumno/grupo', {
         sesion_id:   sesionId,
-        miembro_ids: [...seleccionados],
+        miembro_ids: soloYo ? [] : [...seleccionados],
       })
       router.push(`/alumno/evaluar?sesion_id=${sesionId}`)
     } catch (err) {
@@ -271,14 +270,26 @@ export default function GrupoPage() {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3 flex-wrap">
         <p className="text-sm text-gray-400 flex-1">
           {seleccionados.size >= 1
             ? `Grupo de ${seleccionados.size + 1} integrantes listo para confirmar.`
-            : 'Selecciona al menos 1 compañero.'}
+            : 'Selecciona compañeros o trabaja solo.'}
         </p>
         <button
-          onClick={confirmarGrupo}
+          onClick={() => {
+            if (confirm('¿Confirmas que trabajarás solo? Solo podrás autoevaluarte.')) {
+              confirmarGrupo(true)
+            }
+          }}
+          disabled={guardando}
+          className="border border-gray-200 text-gray-600 rounded-lg px-4 py-2.5 text-sm
+                     hover:bg-gray-50 transition-colors disabled:opacity-40"
+        >
+          Trabajar solo
+        </button>
+        <button
+          onClick={() => confirmarGrupo(false)}
           disabled={seleccionados.size === 0 || guardando}
           className="bg-blue-600 text-white rounded-lg px-5 py-2.5 text-sm font-medium
                      hover:bg-blue-700 transition-colors disabled:opacity-40 flex items-center gap-2"

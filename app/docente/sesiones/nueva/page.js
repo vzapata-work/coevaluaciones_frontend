@@ -181,16 +181,23 @@ export default function NuevaSesionPage() {
 
               <div className="mb-3">
                 <label className="block text-xs text-gray-500 mb-1">
-                  Tamaño máximo del grupo: <span className="font-medium text-gray-800">{maxGrupo} alumnos</span>
+                  Tamaño máximo del grupo: <span className="font-medium text-gray-800">
+                    {maxGrupo === 1 ? '1 alumno (trabajo individual)' : `${maxGrupo} alumnos`}
+                  </span>
                 </label>
                 <input
-                  type="range" min="2" max="6" value={maxGrupo}
+                  type="range" min="1" max="6" value={maxGrupo}
                   onChange={e => setMaxGrupo(Number(e.target.value))}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-300 mt-0.5">
-                  <span>2</span><span>6</span>
+                  <span>1</span><span>6</span>
                 </div>
+                {maxGrupo === 1 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Los alumnos se autoevaluarán individualmente sin compañeros.
+                  </p>
+                )}
               </div>
 
               <Toggle label="Incluir autoevaluación" desc="El alumno se evalúa a sí mismo"

@@ -60,7 +60,9 @@ export default function EvaluarPage() {
       // Orden: yo primero (autoevaluación), luego el resto
       const yo       = g.miembros.find(m => m.id === usuario.id)
       const otros    = g.miembros.filter(m => m.id !== usuario.id)
-      const ordenados = s?.con_autoevaluacion ? [yo, ...otros] : otros
+      // Grupo de 1: si no hay compañeros, solo se autoevalúa (siempre incluir autoevaluación)
+      const soloYo   = otros.length === 0
+      const ordenados = (s?.con_autoevaluacion || soloYo) ? [yo, ...otros] : otros
       setPersonas(ordenados.filter(Boolean))
     } catch (err) {
       setError(err.message)

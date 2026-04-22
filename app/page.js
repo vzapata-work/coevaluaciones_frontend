@@ -85,15 +85,17 @@ export default function LoginPage() {
             </div>
           ) : (
             <>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                width="100%"
-                text="continue_with"
-                shape="rectangular"
-                logo_alignment="left"
-                locale="es"
-              />
+              <div style={{ display:'flex', justifyContent:'center' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  width="400"
+                  text="continue_with"
+                  shape="rectangular"
+                  logo_alignment="left"
+                  locale="es"
+                />
+              </div>
               <div className="flex items-center gap-2 my-3">
                 <hr className="flex-1 border-gray-100"/>
                 <span className="text-xs text-gray-400">solo cuentas institucionales</span>

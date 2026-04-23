@@ -89,7 +89,7 @@ export default function LoginPage() {
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
-                  width="400"
+                  width="320"
                   text="continue_with"
                   shape="rectangular"
                   logo_alignment="left"
